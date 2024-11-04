@@ -6,6 +6,7 @@ const day04 = @import("day04.zig");
 const day05 = @import("day05.zig");
 const day06 = @import("day06.zig");
 const day07 = @import("day07.zig");
+const day08 = @import("day08.zig");
 
 pub const std_options: std.Options = .{ .log_level = .info };
 
@@ -22,8 +23,9 @@ pub fn main() !void {
     _ = day05.part2();
     _ = day06.part1();
     _ = day06.part2();
-    // _ = day07.part1();
-    // _ = day07.part2();
+    _ = day07.part1();
+    _ = day07.part2();
+    _ = day08.main();
 }
 
 test {

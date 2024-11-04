@@ -304,7 +304,7 @@ const Fs = struct {
     }
 };
 
-fn part1() usize {
+pub fn part1() usize {
     const data = @embedFile("data/day07.txt");
 
     var device_fs = Fs.init(alloc.arena);
@@ -318,7 +318,7 @@ test part1 {
     try testing.expectEqual(1_432_936, part1());
 }
 
-fn part2() struct { []const u8, usize } {
+pub fn part2() struct { []const u8, usize } {
     const data = @embedFile("data/day07.txt");
 
     var device_fs = Fs.init(alloc.arena);
