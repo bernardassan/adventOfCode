@@ -1,12 +1,12 @@
 const std = @import("std");
 const log = std.log;
 const testing = std.testing;
-const gpa = @import("alloc.zig").arena;
 const env = @import("env");
+const gpa = env.arena;
 
 fn elveList() std.ArrayList(env.Calories) {
     const cwd = std.fs.cwd();
-    const content = cwd.readFileAlloc(gpa, env.DATA_DIR ++ "day01.txt", std.math.maxInt(usize)) catch unreachable;
+    const content = cwd.readFileAlloc(gpa, "src/data/day01.txt", std.math.maxInt(usize)) catch unreachable;
 
     var lines = std.mem.splitScalar(u8, content, '\n');
 

@@ -1,5 +1,5 @@
 const std = @import("std");
-const consts = @import("consts.zig");
+const env = @import("env");
 const log = std.log;
 const testing = std.testing;
 
@@ -51,8 +51,8 @@ fn rockPaperSissorsInitialStrategy(data: []const u8) usize {
 
     var total_score_1: usize = 0;
     while (lines.next()) |line| {
-        var players = if (line.len != consts.EMPTY) std.mem.splitScalar(u8, line, ' ') else {
-            if (line.len == consts.EMPTY) break;
+        var players = if (line.len != env.EMPTY) std.mem.splitScalar(u8, line, ' ') else {
+            if (line.len == env.EMPTY) break;
             unreachable;
         };
         const opponent = stringToEnum(Player, players.first()).?;
@@ -100,8 +100,8 @@ fn rockPaperSissorsFinalStrategy(data: []const u8) usize {
 
     var total_score_2: usize = 0;
     while (lines.next()) |line| {
-        var players = if (line.len != consts.EMPTY) std.mem.splitScalar(u8, line, ' ') else {
-            if (line.len == consts.EMPTY) break;
+        var players = if (line.len != env.EMPTY) std.mem.splitScalar(u8, line, ' ') else {
+            if (line.len == env.EMPTY) break;
             unreachable;
         };
         const opponent = stringToEnum(Player, players.first()).?;

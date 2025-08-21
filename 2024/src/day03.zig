@@ -2,11 +2,15 @@ const std = @import("std");
 const log = std.log;
 const testing = std.testing;
 
+const env = @import("env");
+const fba = env.fba;
+
 pub fn part1() usize {
     const content = @embedFile("data/day03.txt");
     const content_lines_len = 300;
 
-    var item_list = std.BoundedArray(u8, content_lines_len).init(0) catch unreachable;
+    var buf: [content_lines_len]u8 = undefined;
+    var item_list: std.ArrayList(u8) = .initBuffer(&buf);
 
     var lines = std.mem.tokenizeScalar(u8, content, '\n');
 
@@ -19,7 +23,7 @@ pub fn part1() usize {
         item_list.appendAssumeCapacity(common_item_in_compartments);
     }
 
-    const priority_sum = itemsToPriority(item_list.constSlice());
+    const priority_sum = itemsToPriority(item_list.items);
     log.info(
         "The sum of the priorities of common items is {[priority_sum]}",
         .{ .priority_sum = priority_sum },
@@ -54,7 +58,8 @@ pub fn part2() usize {
     const content = @embedFile("data/day03.txt");
     const content_lines_len = 100;
 
-    var badge_list = std.BoundedArray(u8, content_lines_len).init(0) catch unreachable;
+    var buf: [content_lines_len]u8 = undefined;
+    var badge_list: std.ArrayList(u8) = .initBuffer(&buf);
 
     var elves_groups = std.mem.tokenizeScalar(u8, content, '\n');
     var line_count: usize = 0;
@@ -77,7 +82,7 @@ pub fn part2() usize {
         }
     }
 
-    const priority_sum = itemsToPriority(badge_list.constSlice());
+    const priority_sum = itemsToPriority(badge_list.items);
     log.info(
         "The sum of the priorities of badges in the various 3 elf group is {[priority_sum]}",
         .{ .priority_sum = priority_sum },
