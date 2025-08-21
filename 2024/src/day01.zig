@@ -2,24 +2,24 @@ const std = @import("std");
 const log = std.log;
 const testing = std.testing;
 const gpa = @import("alloc.zig").arena;
-const consts = @import("consts.zig");
+const env = @import("env");
 
-fn elveList() std.ArrayList(consts.Calories) {
+fn elveList() std.ArrayList(env.Calories) {
     const cwd = std.fs.cwd();
-    const content = cwd.readFileAlloc(gpa, "src/data/day01.txt", std.math.maxInt(usize)) catch unreachable;
+    const content = cwd.readFileAlloc(gpa, env.DATA_DIR ++ "day01.txt", std.math.maxInt(usize)) catch unreachable;
 
     var lines = std.mem.splitScalar(u8, content, '\n');
 
-    var elves_calories = std.ArrayList(consts.Calories).init(gpa);
+    var elves_calories: std.ArrayList(env.Calories) = .empty;
 
     var current_total_calories: usize = 0;
     while (lines.next()) |line| {
-        if (line.len != consts.EMPTY) {
+        if (line.len != env.EMPTY) {
             const elve_calories = std.fmt.parseInt(usize, line, 10) catch unreachable;
             current_total_calories += elve_calories;
         } else {
             //add the number of calories for the current elve
-            elves_calories.append(current_total_calories) catch unreachable;
+            elves_calories.append(gpa, current_total_calories) catch unreachable;
             //reset number of calories for next elve
             current_total_calories = 0;
         }
@@ -29,7 +29,7 @@ fn elveList() std.ArrayList(consts.Calories) {
 
 pub fn part1() usize {
     const elves_calories = elveList();
-    const location_of_elve_with_max_calories = std.mem.indexOfMax(consts.Calories, elves_calories.items);
+    const location_of_elve_with_max_calories = std.mem.indexOfMax(env.Calories, elves_calories.items);
     log.info(
         "The {[position]}th elve has the maximum number of calories which is {[max]}",
         .{ .position = location_of_elve_with_max_calories, .max = elves_calories.items[location_of_elve_with_max_calories] },
@@ -53,9 +53,6 @@ fn top3elves(list: []const usize) [3]usize {
     }
     return top3;
 }
-test part1 {
-    try testing.expectEqual(@as(usize, 74711), part1());
-}
 
 pub fn part2() usize {
     const elves_calories = elveList().items;
@@ -77,4 +74,8 @@ pub fn part2() usize {
 
 test part2 {
     try testing.expectEqual(@as(usize, 209481), part2());
+}
+
+test part1 {
+    try testing.expectEqual(@as(usize, 74711), part1());
 }
