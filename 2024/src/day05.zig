@@ -2,7 +2,10 @@ const std = @import("std");
 const testing = std.testing;
 const mem = std.mem;
 const log = std.log;
-const io = std.io;
+const Io = std.Io;
+
+const env = @import("env");
+const fba = env.fba;
 
 const StacksOfCrates = struct {
     const Self = @This();
@@ -13,7 +16,8 @@ const StacksOfCrates = struct {
     const column_upper_bound = column_len + 40; //the +40 is to account for the lenght during crates shuffle/movement
     const moves_no = 501;
 
-    const Stack = std.BoundedArray(u8, column_upper_bound);
+    var stack_buf: [column_upper_bound]u8 = undefined;
+    const Stack = std.ArrayList(u8).initBuffer(&stack_buf);
 
     /// struct { quantity: u9, from: u9, to: u9 };
     const Move = struct { u9, u9, u9 };
@@ -26,7 +30,7 @@ const StacksOfCrates = struct {
 
     pub fn init() Self {
         const input = @embedFile("data/day05.txt");
-        var crates: [column_no]Stack = [_]Stack{Stack.init(0) catch unreachable} ** column_no;
+        var crates: [column_no]Stack = @splat(@splat(Stack.ensureTotalCapacityPrecise(column_upper_bound) catch unreachable));
 
         var lines = mem.splitScalar(u8, input, '\n');
         while (lines.next()) |line| {
@@ -72,37 +76,37 @@ const StacksOfCrates = struct {
     }
 
     fn print(self: *const Self) void {
-        const stdout_file = io.getStdOut().writer();
-        var bw = io.bufferedWriter(stdout_file);
-        const stdout = bw.writer();
+        var buf: [64]u8 = undefined;
+        const stdout_file: std.fs.File = .stdout();
+        var stdout_bw = stdout_file.writer(&buf);
+
+        const stdout = &stdout_bw.interface;
+        defer stdout.flush() catch unreachable;
 
         for (self.crates, 0..) |row, index| {
             stdout.print("{}", .{index});
-            for (row.constSlice()) |value| {
+            for (row.items) |value| {
                 stdout.print("[{c}]", .{value}) catch unreachable;
             }
             stdout.print("\n", .{}) catch unreachable;
         }
-        bw.flush() catch unreachable;
     }
 
     ///get top of stacks
     fn top(self: *const Self) [9]u8 {
         var buf: [9]u8 = undefined;
-        var fbs = io.fixedBufferStream(&buf);
-        var bw = io.bufferedWriter(fbs.writer());
-        defer bw.flush() catch unreachable;
-
-        const output = bw.writer();
+        var fbs: Io.Writer = .fixed(&buf);
+        defer fbs.flush() catch unreachable;
 
         for (self.crates) |crate| {
-            if (crate.len > 0) output.print(
+            if (crate.items.len > 0) fbs.print(
                 "{c}",
-                .{crate.get(crate.len - 1)},
+                .{crate.items[crate.items.len - 1]},
             ) catch unreachable;
         }
 
-        return mem.bytesToValue([9]u8, bw.buf[0..bw.end]);
+        var fbr: Io.Reader = .fixed(&buf);
+        return *fbr.takeArray(@sizeOf(buf)) catch unreachable;
     }
 };
 
@@ -115,7 +119,7 @@ pub fn part1() [9]u8 {
         var move_count: usize = 0;
         while (move_count < quantity) : (move_count += 1) {
             const move_value = stacks.crates[from - 1].pop();
-            stacks.crates[to - 1].appendAssumeCapacity(move_value);
+            stacks.crates[to - 1].appendAssumeCapacity(move_value.?);
         }
     }
     const top = stacks.top();
@@ -137,7 +141,7 @@ pub fn part2() [9]u8 {
     for (stacks.moves) |instructions| {
         const quantity, const from, const to = instructions;
 
-        var move_crate = StacksOfCrates.Stack.init(0) catch unreachable;
+        var move_crate = StacksOfCrates.Stack;
 
         var move_from_count: usize = 0;
         //move count crates into the `move_crate`
