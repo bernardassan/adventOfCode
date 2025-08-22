@@ -5,15 +5,21 @@ const env = @import("env");
 const gpa = env.arena;
 
 fn elveList() std.ArrayList(env.Calories) {
-    const cwd = std.fs.cwd();
-    const content = cwd.readFileAlloc(gpa, "src/data/day01.txt", std.math.maxInt(usize)) catch unreachable;
+    const day01_txt = std.fs.cwd().openFile(
+        "src/data/day01.txt",
+        .{ .mode = .read_only },
+    ) catch unreachable;
+    defer day01_txt.close();
 
-    var lines = std.mem.splitScalar(u8, content, '\n');
+    var file_buf: [1024]u8 = undefined;
+    var day01_data: std.fs.File.Reader = .init(day01_txt, &file_buf);
+    var reader = &day01_data.interface;
 
     var elves_calories: std.ArrayList(env.Calories) = .empty;
 
     var current_total_calories: usize = 0;
-    while (lines.next()) |line| {
+
+    while (reader.takeDelimiterExclusive('\n')) |line| {
         if (line.len != env.EMPTY) {
             const elve_calories = std.fmt.parseInt(usize, line, 10) catch unreachable;
             current_total_calories += elve_calories;
@@ -23,6 +29,11 @@ fn elveList() std.ArrayList(env.Calories) {
             //reset number of calories for next elve
             current_total_calories = 0;
         }
+    } else |err| switch (err) {
+        error.EndOfStream => {
+            std.debug.assert(reader.seek == reader.end);
+        },
+        else => unreachable,
     }
     return elves_calories;
 }
@@ -73,9 +84,9 @@ pub fn part2() usize {
 }
 
 test part2 {
-    try testing.expectEqual(@as(usize, 209481), part2());
+    try testing.expectEqual(209481, part2());
 }
 
 test part1 {
-    try testing.expectEqual(@as(usize, 74711), part1());
+    try testing.expectEqual(74711, part1());
 }

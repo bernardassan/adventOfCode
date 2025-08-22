@@ -1,5 +1,9 @@
 const std = @import("std");
 const mem = std.mem;
+const testing = std.testing;
+
+pub const std_options: std.Options = .{ .log_level = .debug };
+const log = std.log.scoped(.day08);
 
 const Direction = enum { left, right, up, down };
 
@@ -20,7 +24,7 @@ fn Forest(comptime size: usize) type {
 
             var forest: Self = .{
                 .input = @splat(@splat(0)),
-                .visible = VisMask.initEmpty(),
+                .visible = .initEmpty(),
                 .width = @intCast(grid_width),
             };
             @memcpy(forest.input[0][0..], first_line);
@@ -32,7 +36,7 @@ fn Forest(comptime size: usize) type {
             return forest;
         }
 
-        fn isVisible(self: *const Self, x: usize, y: usize) bool {
+        fn inBound(self: *const Self, x: usize, y: usize) bool {
             return !(x > 0 and y > 0 and x < self.width - 1 and y < self.width - 1);
         }
 
@@ -49,8 +53,31 @@ fn Forest(comptime size: usize) type {
                     .down => column += 1,
                 }
                 if (tree <= self.input[row][column]) break;
-                if (self.isVisible(row, column)) {
-                    std.debug.print("tree {c} = {}:x {}:y dir {s}\n", .{ tree, x, y, @tagName(direction) });
+                if (self.inBound(row, column)) {
+                    log.debug("tree {} = {}:x {}:y dir {t}\n", .{ tree, x, y, direction });
+                    const column_offset = y * self.width;
+                    self.visible.set(x + column_offset);
+                    break;
+                }
+            }
+            return score + 1;
+        }
+
+        pub fn isVisible(self: *Self, x: usize, y: usize, comptime direction: Direction) u64 {
+            const tree = self.input[x][y];
+            var row: usize = x;
+            var column: usize = y;
+            var score: u64 = 0;
+            while (score < self.width) : (score += 1) {
+                switch (direction) {
+                    .left => row -= 1,
+                    .right => row += 1,
+                    .up => column -= 1,
+                    .down => column += 1,
+                }
+                if (tree <= self.input[row][column]) break;
+                if (self.inBound(row, column)) {
+                    log.debug("tree {} = {}:x {}:y dir {t}\n", .{ tree, x, y, direction });
                     const column_offset = y * self.width;
                     self.visible.set(x + column_offset);
                     break;
@@ -64,7 +91,7 @@ fn Forest(comptime size: usize) type {
 fn solve(comptime input: []const u8) [2]u64 {
     const grid_width = comptime mem.indexOf(u8, input, "\n").?;
 
-    var forest = Forest(grid_width).init(input);
+    var forest: Forest(grid_width) = .init(input);
 
     var part2: u64 = 0;
 
@@ -102,6 +129,13 @@ test "test-input" {
         \\33549
         \\35390
     ;
-    const sol = solve(test_input);
-    std.debug.print("Part 1: {d}\nPart 2: {d}\n", .{ sol[0], sol[1] });
+    const part1, const part2 = solve(test_input);
+    try testing.expectEqual(21, part1);
+    try testing.expectEqual(8, part2);
+}
+
+test solve {
+    const part1, const part2 = solve(@embedFile("data/day08.txt"));
+    try testing.expectEqual(1684, part1);
+    try testing.expectEqual(486540, part2);
 }

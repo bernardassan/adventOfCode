@@ -13,12 +13,11 @@ const StacksOfCrates = struct {
     const stack_offset = 4;
     const column_no = 9;
     const column_len = 8;
-    const column_upper_bound = column_len + 40; //the +40 is to account for the lenght during crates shuffle/movement
+    //the +40 is to account for the lenght during crates shuffle/movement
+    const column_upper_bound = column_len + 40;
     const moves_no = 501;
 
-    var stack_buf: [column_upper_bound]u8 = undefined;
-    const Stack = std.ArrayList(u8).initBuffer(&stack_buf);
-
+    const Stack = std.ArrayList(u8);
     /// struct { quantity: u9, from: u9, to: u9 };
     const Move = struct { u9, u9, u9 };
 
@@ -30,7 +29,11 @@ const StacksOfCrates = struct {
 
     pub fn init() Self {
         const input = @embedFile("data/day05.txt");
-        var crates: [column_no]Stack = @splat(@splat(Stack.ensureTotalCapacityPrecise(column_upper_bound) catch unreachable));
+
+        var crates: Crates = @splat(.empty);
+        for (&crates) |*crate| {
+            crate.ensureTotalCapacityPrecise(fba, column_upper_bound) catch unreachable;
+        }
 
         var lines = mem.splitScalar(u8, input, '\n');
         while (lines.next()) |line| {
@@ -64,9 +67,8 @@ const StacksOfCrates = struct {
         }
 
         // reverse the stack so that its end match the input sample end
-        for (&crates) |*stack| {
-            mem.reverse(u8, stack.slice());
-        }
+        for (&crates) |*stack|
+            mem.reverse(u8, stack.items);
 
         return .{ .crates = crates, .moves = moves };
     }
@@ -106,12 +108,12 @@ const StacksOfCrates = struct {
         }
 
         var fbr: Io.Reader = .fixed(&buf);
-        return *fbr.takeArray(@sizeOf(buf)) catch unreachable;
+        return (fbr.takeArray(buf.len) catch unreachable).*;
     }
 };
 
 pub fn part1() [9]u8 {
-    var stacks = StacksOfCrates.init();
+    var stacks: StacksOfCrates = .init();
 
     for (stacks.moves) |instruction| {
         const quantity, const from, const to = instruction;
@@ -136,23 +138,24 @@ test part1 {
 }
 
 pub fn part2() [9]u8 {
-    var stacks = StacksOfCrates.init();
+    var stacks: StacksOfCrates = .init();
 
     for (stacks.moves) |instructions| {
         const quantity, const from, const to = instructions;
 
-        var move_crate = StacksOfCrates.Stack;
+        var stack_buf: [StacksOfCrates.column_upper_bound]u8 = undefined;
+        var move_crate: StacksOfCrates.Stack = .initBuffer(&stack_buf);
 
         var move_from_count: usize = 0;
         //move count crates into the `move_crate`
         while (move_from_count < quantity) : (move_from_count += 1) {
-            move_crate.appendAssumeCapacity(stacks.crates[from - 1].pop());
+            move_crate.appendAssumeCapacity(stacks.crates[from - 1].pop().?);
         }
 
         //move the  count crates into the `move_crate`
         var move_to_count: usize = 0;
         while (move_to_count < quantity) : (move_to_count += 1) {
-            stacks.crates[to - 1].appendAssumeCapacity(move_crate.pop());
+            stacks.crates[to - 1].appendAssumeCapacity(move_crate.pop().?);
         }
     }
 
