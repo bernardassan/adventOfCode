@@ -51,7 +51,7 @@ fn itemsToPriority(item_list: []const u8) usize {
 }
 
 test part1 {
-    try testing.expectEqual(@as(usize, 8139), part1());
+    try testing.expectEqual(8139, part1());
 }
 
 pub fn part2() usize {
@@ -90,5 +90,5 @@ pub fn part2() usize {
     return priority_sum;
 }
 test part2 {
-    try testing.expectEqual(@as(usize, 2668), part2());
+    try testing.expectEqual(2668, part2());
 }

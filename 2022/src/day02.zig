@@ -2,6 +2,7 @@ const std = @import("std");
 const env = @import("env");
 const log = std.log;
 const testing = std.testing;
+const meta = std.meta;
 
 const Game = enum(u8) {
     Rock = 1,
@@ -23,8 +24,6 @@ const Player = enum {
     X, Y, Z,
 };
 // zig fmt: on
-
-const stringToEnum = std.meta.stringToEnum;
 
 pub fn part1() usize {
     const data = @embedFile("data/day02.txt");
@@ -55,8 +54,8 @@ fn rockPaperSissorsInitialStrategy(data: []const u8) usize {
             if (line.len == env.EMPTY) break;
             unreachable;
         };
-        const opponent = stringToEnum(Player, players.first()).?;
-        const me = stringToEnum(Player, players.next().?).?;
+        const opponent = meta.stringToEnum(Player, players.first()).?;
+        const me = meta.stringToEnum(Player, players.next().?).?;
         const game_hand_1, const outcome_1 = playRockPaperSissors1(opponent, me);
         total_score_1 += @intFromEnum(game_hand_1) + @intFromEnum(outcome_1);
     }
@@ -65,7 +64,7 @@ fn rockPaperSissorsInitialStrategy(data: []const u8) usize {
 }
 
 fn playRockPaperSissors1(opponent: Player, me: Player) struct { Game, GameOutcome } {
-    var player_game = std.EnumArray(Player, Game).initUndefined();
+    var player_game: std.EnumArray(Player, Game) = .initUndefined();
     player_game.set(.A, .Rock);
     player_game.set(.B, .Paper);
     player_game.set(.C, .Scissors);
@@ -104,8 +103,8 @@ fn rockPaperSissorsFinalStrategy(data: []const u8) usize {
             if (line.len == env.EMPTY) break;
             unreachable;
         };
-        const opponent = stringToEnum(Player, players.first()).?;
-        const me = stringToEnum(Player, players.next().?).?;
+        const opponent = meta.stringToEnum(Player, players.first()).?;
+        const me = meta.stringToEnum(Player, players.next().?).?;
         const game_hand_2, const outcome_2 = playRockPaperSissors2(opponent, me);
         total_score_2 += @intFromEnum(game_hand_2) + @intFromEnum(outcome_2);
     }
@@ -114,12 +113,12 @@ fn rockPaperSissorsFinalStrategy(data: []const u8) usize {
 }
 
 fn playRockPaperSissors2(opponent: Player, me: Player) struct { Game, GameOutcome } {
-    var opponent_hand = std.EnumArray(Player, Game).initUndefined();
+    var opponent_hand: std.EnumArray(Player, Game) = .initUndefined();
     opponent_hand.set(.A, .Rock);
     opponent_hand.set(.B, .Paper);
     opponent_hand.set(.C, .Scissors);
 
-    var my_outcome = std.EnumArray(Player, GameOutcome).initUndefined();
+    var my_outcome: std.EnumArray(Player, GameOutcome) = .initUndefined();
     my_outcome.set(.X, .Lost);
     my_outcome.set(.Y, .Draw);
     my_outcome.set(.Z, .Win);
@@ -147,7 +146,7 @@ fn playRockPaperSissors2(opponent: Player, me: Player) struct { Game, GameOutcom
 }
 
 test part1 {
-    try testing.expectEqual(@as(usize, 11603), part1());
+    try testing.expectEqual(11603, part1());
 
     const data =
         \\A Y
@@ -155,11 +154,11 @@ test part1 {
         \\C Z
         \\
     ;
-    try std.testing.expectEqual(@as(usize, 15), rockPaperSissorsInitialStrategy(data));
+    try std.testing.expectEqual(15, rockPaperSissorsInitialStrategy(data));
 }
 
 test part2 {
-    try testing.expectEqual(@as(usize, 12725), part2());
+    try testing.expectEqual(12725, part2());
 
     const data =
         \\A Y
@@ -167,5 +166,5 @@ test part2 {
         \\C Z
         \\
     ;
-    try std.testing.expectEqual(@as(usize, 12), rockPaperSissorsFinalStrategy(data));
+    try std.testing.expectEqual(12, rockPaperSissorsFinalStrategy(data));
 }

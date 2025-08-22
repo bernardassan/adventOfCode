@@ -3,7 +3,7 @@ const testing = std.testing;
 const mem = std.mem;
 const fmt = std.fmt;
 const debug = std.debug;
-const alloc = @import("alloc.zig");
+const fba = @import("env").fba;
 
 const Fs = struct {
     root: Directory,
@@ -146,10 +146,10 @@ const Fs = struct {
     ;
 
     test browseFs {
-        var arena = std.heap.ArenaAllocator.init(testing.allocator);
+        var arena: std.heap.ArenaAllocator = .init(testing.allocator);
         defer arena.deinit();
 
-        var device_fs = Fs.init(arena.allocator());
+        var device_fs: Fs = .init(arena.allocator());
         const dir = device_fs.browseFs(fs_operations);
         defer device_fs.deinit(dir);
 
@@ -166,9 +166,9 @@ const Fs = struct {
                     };
                     try testing.expectEqualDeep(file_b, files[max_depth]);
                     const dir_a = sub_dirs[max_depth];
-                    try testing.expectEqualSlices(u8, dir_a.name, "a");
+                    try testing.expectEqualSlices(u8, "a", dir_a.name);
                     try testing.expectEqual(94853, dir_a.size);
-                    try testing.expectEqual(dir_a.parent.?.name, "/");
+                    try testing.expectEqual("/", dir_a.parent.?.name);
                     const dir_e = sub_dirs[max_depth].sub_dirs.items[max_depth];
                     try testing.expectEqual(584, dir_e.size);
 
@@ -188,10 +188,10 @@ const Fs = struct {
                     };
                     try testing.expectEqualDeep(file_c, files[max_depth]);
                     const dir_d = sub_dirs[max_depth];
-                    try testing.expectEqualSlices(u8, dir_d.name, "d");
+                    try testing.expectEqualSlices(u8, "d", dir_d.name);
                     try testing.expectEqual(24933642, dir_d.size);
 
-                    try testing.expectEqual(dir_d.parent.?.name, "/");
+                    try testing.expectEqual("/", dir_d.parent.?.name);
                     const k_file_index = 3;
                     const file_k_actual = sub_dirs[max_depth].files.items[k_file_index];
                     const file_k = Fs.File{
@@ -210,13 +210,13 @@ const Fs = struct {
     /// using preorder traversal of the directory tree
     fn sumSizeOfDir(fs: *Fs, max_size: usize) usize {
         var running_sum: usize = if (fs.root.size <= max_size) fs.root.size else 0;
-        var stack: std.ArrayList([]Directory) = .init(fs.arena);
-        stack.append(fs.root.sub_dirs.items) catch unreachable;
-        while (stack.popOrNull()) |dirs| {
+        var stack: std.ArrayList([]Directory) = .empty;
+        stack.append(fs.arena, fs.root.sub_dirs.items) catch unreachable;
+        while (stack.pop()) |dirs| {
             for (dirs) |dir| {
                 if (dir.size <= max_size) running_sum += dir.size;
                 if (dir.sub_dirs.items.len != 0) {
-                    stack.append(dir.sub_dirs.items) catch unreachable;
+                    stack.append(fs.arena, dir.sub_dirs.items) catch unreachable;
                 }
             }
         }
@@ -224,10 +224,10 @@ const Fs = struct {
     }
 
     test sumSizeOfDir {
-        var arena = std.heap.ArenaAllocator.init(testing.allocator);
+        var arena: std.heap.ArenaAllocator = .init(testing.allocator);
         defer arena.deinit();
 
-        var device_fs = Fs.init(arena.allocator());
+        var device_fs: Fs = .init(arena.allocator());
         const dir = device_fs.browseFs(fs_operations);
         defer device_fs.deinit(dir);
 
@@ -245,13 +245,13 @@ const Fs = struct {
         const size_of_extra_space_needed = needed_unused_space - current_unused_space;
 
         var smallest_big_dir: struct { []const u8, usize } = .{ "", total_used_space };
-        var stack: std.ArrayList([]Directory) = .init(fs.arena);
-        stack.append(fs.root.sub_dirs.items) catch unreachable;
-        while (stack.popOrNull()) |dirs| {
+        var stack: std.ArrayList([]Directory) = .empty;
+        stack.append(fs.arena, fs.root.sub_dirs.items) catch unreachable;
+        while (stack.pop()) |dirs| {
             for (dirs) |dir| {
                 if (dir.size >= size_of_extra_space_needed) smallest_big_dir = .{ dir.name, @min(dir.size, smallest_big_dir[1]) };
                 if (dir.sub_dirs.items.len != 0) {
-                    stack.append(dir.sub_dirs.items) catch unreachable;
+                    stack.append(fs.arena, dir.sub_dirs.items) catch unreachable;
                 }
             }
         }
@@ -259,10 +259,10 @@ const Fs = struct {
     }
 
     test dirToDelToEnableUpdate {
-        var arena = std.heap.ArenaAllocator.init(testing.allocator);
+        var arena: std.heap.ArenaAllocator = .init(testing.allocator);
         defer arena.deinit();
 
-        var device_fs = Fs.init(arena.allocator());
+        var device_fs: Fs = .init(arena.allocator());
         const dir = device_fs.browseFs(fs_operations);
         defer device_fs.deinit(dir);
 
@@ -274,16 +274,16 @@ const Fs = struct {
         for (fs.root.files.items) |file| {
             std.debug.print("file: {s} - size: {}\n", .{ file.name, file.size });
         }
-        var stack: std.ArrayList([]Directory) = .init(fs.arena);
-        stack.append(fs.root.sub_dirs.items) catch unreachable;
-        while (stack.popOrNull()) |dirs| {
+        var stack: std.ArrayList([]Directory) = .empty;
+        stack.append(fs.arena, fs.root.sub_dirs.items) catch unreachable;
+        while (stack.pop()) |dirs| {
             for (dirs) |dir| {
                 std.debug.print("dir: {s} - size: {}\n", .{ dir.name, dir.size });
                 for (dir.files.items) |file| {
                     std.debug.print("file: {s} - size: {}\n", .{ file.name, file.size });
                 }
                 if (dir.sub_dirs.items.len != 0) {
-                    stack.append(dir.sub_dirs.items) catch unreachable;
+                    stack.append(fs.arena, dir.sub_dirs.items) catch unreachable;
                 }
             }
         }
@@ -293,10 +293,10 @@ const Fs = struct {
         if (true)
             return error.SkipZigTest;
 
-        var arena = std.heap.ArenaAllocator.init(testing.allocator);
+        var arena: std.heap.ArenaAllocator = .init(testing.allocator);
         defer arena.deinit();
 
-        var device_fs = Fs.init(arena.allocator());
+        var device_fs: Fs = .init(arena.allocator());
         const dir = device_fs.browseFs(fs_operations);
         defer device_fs.deinit(dir);
 
@@ -307,7 +307,7 @@ const Fs = struct {
 pub fn part1() usize {
     const data = @embedFile("data/day07.txt");
 
-    var device_fs = Fs.init(alloc.arena);
+    var device_fs: Fs = .init(fba);
     const dir = device_fs.browseFs(data);
     defer device_fs.deinit(dir);
 
@@ -321,7 +321,7 @@ test part1 {
 pub fn part2() struct { []const u8, usize } {
     const data = @embedFile("data/day07.txt");
 
-    var device_fs = Fs.init(alloc.arena);
+    var device_fs: Fs = .init(fba);
     const dir = device_fs.browseFs(data);
     defer device_fs.deinit(dir);
 

@@ -38,7 +38,7 @@ pub fn part1() usize {
 }
 
 test part1 {
-    try testing.expectEqual(@as(usize, 573), part1());
+    try testing.expectEqual(573, part1());
 }
 
 pub fn part2() usize {
@@ -75,5 +75,5 @@ pub fn part2() usize {
 }
 
 test part2 {
-    try testing.expectEqual(@as(usize, 867), part2());
+    try testing.expectEqual(867, part2());
 }

@@ -8,7 +8,7 @@ pub fn build(b: *std.Build) !void {
 
     const env = b.createModule(.{ .root_source_file = b.path("src/env.zig") });
 
-    const all_step = b.step("2024", "Run all AOC 2024");
+    const all_step = b.step("2022", "Run all AOC 2022");
     const src = "src/";
     const files = try findFiles(b, src);
     for (files) |basename| {
