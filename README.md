@@ -1,2 +1,2 @@
-# adventOfCode2022
-Solutions for advent of code 2022 in zig and rust
+# adventOfCode
+Solutions for advent of code in Zig
