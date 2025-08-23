@@ -8,8 +8,6 @@ const env = @import("env");
 const fba = env.fba;
 
 const StacksOfCrates = struct {
-    const Self = @This();
-
     const stack_offset = 4;
     const column_no = 9;
     const column_len = 8;
@@ -27,7 +25,7 @@ const StacksOfCrates = struct {
     crates: Crates,
     moves: Moves,
 
-    pub fn init() Self {
+    pub fn init() StacksOfCrates {
         const input = @embedFile("data/day05.txt");
 
         var crates: Crates = @splat(.empty);
@@ -77,31 +75,29 @@ const StacksOfCrates = struct {
         return std.fmt.parseUnsigned(u9, buf, 10) catch unreachable;
     }
 
-    fn print(self: *const Self) void {
+    fn print(self: *const StacksOfCrates) void {
         var buf: [64]u8 = undefined;
-        const stdout_file: std.fs.File = .stdout();
-        var stdout_bw = stdout_file.writer(&buf);
-
-        const stdout = &stdout_bw.interface;
-        defer stdout.flush() catch unreachable;
+        var stderr_w = std.fs.File.stderr().writer(&buf);
+        const stderr = &stderr_w.interface;
+        defer stderr.flush() catch unreachable;
 
         for (self.crates, 0..) |row, index| {
-            stdout.print("{}", .{index});
+            stderr.print("{}", .{index}) catch unreachable;
             for (row.items) |value| {
-                stdout.print("[{c}]", .{value}) catch unreachable;
+                stderr.print("[{c}]", .{value}) catch unreachable;
             }
-            stdout.print("\n", .{}) catch unreachable;
+            stderr.print("\n", .{}) catch unreachable;
         }
     }
 
     ///get top of stacks
-    fn top(self: *const Self) [9]u8 {
+    fn top(self: *const StacksOfCrates) [9]u8 {
         var buf: [9]u8 = undefined;
-        var fbs: Io.Writer = .fixed(&buf);
-        defer fbs.flush() catch unreachable;
+        var fbw: Io.Writer = .fixed(&buf);
+        defer fbw.flush() catch unreachable;
 
         for (self.crates) |crate| {
-            if (crate.items.len > 0) fbs.print(
+            if (crate.items.len > 0) fbw.print(
                 "{c}",
                 .{crate.items[crate.items.len - 1]},
             ) catch unreachable;
@@ -120,8 +116,8 @@ pub fn part1() [9]u8 {
 
         var move_count: usize = 0;
         while (move_count < quantity) : (move_count += 1) {
-            const move_value = stacks.crates[from - 1].pop();
-            stacks.crates[to - 1].appendAssumeCapacity(move_value.?);
+            const move_value = stacks.crates[from - 1].pop().?;
+            stacks.crates[to - 1].appendAssumeCapacity(move_value);
         }
     }
     const top = stacks.top();
